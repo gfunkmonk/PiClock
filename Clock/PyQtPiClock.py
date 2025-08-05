@@ -2419,7 +2419,7 @@ objradar4 = Radar(frame2, Config.radar4, radar4rect, 'radar4')
 datex = QtWidgets.QLabel(foreGround)
 datex.setObjectName('datex')
 datex.setStyleSheet('#datex { font-family:sans-serif; color: ' +
-                    Config.textcolor +
+                    Config.textcolorTopLine +  # Цвет верхняя строка
                     '; background-color: transparent; font-size: ' +
                     str(int(50 * xscale * Config.fontmult)) +
                     'px; ' +
@@ -2431,17 +2431,17 @@ datex.setGeometry(0, 0, width, int(100 * yscale))
 datex2 = QtWidgets.QLabel(frame2)
 datex2.setObjectName('datex2')
 datex2.setStyleSheet('#datex2 { font-family:sans-serif; color: ' +
-                     Config.textcolor +
+                     Config.textcolorDatex2 +  # Цвет День недели на второй странице
                      '; background-color: transparent; font-size: ' +
                      str(int(50 * xscale * Config.fontmult)) + 'px; ' +
                      Config.fontattr +
                      '}')
 datex2.setAlignment(Qt.AlignHCenter | Qt.AlignTop)
-datex2.setGeometry(int(800 * xscale), int(760 * yscale), int(640 * xscale), 100)
+datex2.setGeometry(int(600 * xscale), int(760 * yscale), int(960 * xscale), 100)
 datey2 = QtWidgets.QLabel(frame2)
 datey2.setObjectName('datey2')
 datey2.setStyleSheet('#datey2 { font-family:sans-serif; color: ' +
-                     Config.textcolor +
+                     Config.textcolorDatey2 +  # Цвет Время на 2 стр
                      '; background-color: transparent; font-size: ' +
                      str(int(50 * xscale * Config.fontmult)) +
                      'px; ' +
@@ -2462,17 +2462,17 @@ attribution.setStyleSheet('#attribution { ' +
                           ' background-color: transparent; color: ' +
                           Config.textcolor +
                           '; font-size: ' +
-                          str(int(12 * xscale)) +
+                          str(int(13 * xscale)) +
                           'px; ' +
                           Config.fontattr +
                           '}')
 attribution.setAlignment(Qt.AlignTop)
-attribution.setGeometry(int(6 * xscale), int(3 * yscale), int(130 * xscale), 100)
+attribution.setGeometry(int(6 * xscale), int(3 * yscale), int(150 * xscale), 100)
 
 wxicon2 = QtWidgets.QLabel(frame2)
 wxicon2.setObjectName('wxicon2')
 wxicon2.setStyleSheet('#wxicon2 { background-color: transparent; }')
-wxicon2.setGeometry(int(0 * xscale), int(750 * yscale), int(150 * xscale), int(150 * yscale))
+wxicon2.setGeometry(int(75 * xscale), int(0 * yscale), int(130 * xscale), int(130 * yscale))
 
 attribution2 = QtWidgets.QLabel(frame2)
 attribution2.setObjectName('attribution2')
@@ -2485,38 +2485,37 @@ attribution2.setStyleSheet('#attribution2 { ' +
                            Config.fontattr +
                            '}')
 attribution2.setAlignment(Qt.AlignTop)
-attribution2.setGeometry(int(6 * xscale), int(880 * yscale), int(130 * xscale), 100)
-
+attribution2.setGeometry(int(6 * xscale), int(880 * yscale), int(150 * xscale), 100)
 ypos += 130
 wxdesc = QtWidgets.QLabel(foreGround)
 wxdesc.setObjectName('wxdesc')
 wxdesc.setStyleSheet('#wxdesc { background-color: transparent; color: ' +
-                     Config.textcolor +
+                     Config.textcolorWeather + # Строка состояние погоды слева вверху
                      '; font-size: ' +
                      str(int(30 * xscale)) +
                      'px; ' +
                      Config.fontattr +
                      '}')
-wxdesc.setAlignment(Qt.AlignHCenter | Qt.AlignTop)
-wxdesc.setGeometry(int(3 * xscale), int(ypos * yscale), int(300 * xscale), 100)
+wxdesc.setAlignment(Qt.AlignLeft | Qt.AlignTop)
+wxdesc.setGeometry(int(3 * xscale), int(ypos * yscale), int(600 * xscale), 800)
 
 wxdesc2 = QtWidgets.QLabel(frame2)
 wxdesc2.setObjectName('wxdesc2')
 wxdesc2.setStyleSheet('#wxdesc2 { background-color: transparent; color: ' +
-                      Config.textcolor +
+                      Config.textcolorWeather2 + # Строка состояние погоды на второй странице
                       '; font-size: ' +
                       str(int(50 * xscale * Config.fontmult)) +
                       'px; ' +
                       Config.fontattr +
                       '}')
 wxdesc2.setAlignment(Qt.AlignLeft | Qt.AlignTop)
-wxdesc2.setGeometry(int(400 * xscale), int(800 * yscale), int(400 * xscale), 100)
+wxdesc2.setGeometry(int(150 * xscale), int(845 * yscale), int(900 * xscale), 100)
 
 ypos += 25
 temper = QtWidgets.QLabel(foreGround)
 temper.setObjectName('temper')
 temper.setStyleSheet('#temper { background-color: transparent; color: ' +
-                     Config.textcolor +
+                     Config.textcolorTemper + # Цвет Температура вверху слева
                      '; font-size: ' +
                      str(int(70 * xscale * Config.fontmult)) +
                      'px; ' +
@@ -2528,7 +2527,7 @@ temper.setGeometry(int(3 * xscale), int(ypos * yscale), int(300 * xscale), int(1
 temper2 = QtWidgets.QLabel(frame2)
 temper2.setObjectName('temper2')
 temper2.setStyleSheet('#temper2 { background-color: transparent; color: ' +
-                      Config.textcolor +
+                      Config.textcolorTemper2 + # Цвет Температура на второй странице
                       '; font-size: ' +
                       str(int(70 * xscale * Config.fontmult)) +
                       'px; ' +
@@ -2541,27 +2540,27 @@ ypos += 80
 press = QtWidgets.QLabel(foreGround)
 press.setObjectName('press')
 press.setStyleSheet('#press { background-color: transparent; color: ' +
-                    Config.textcolor +
+                    Config.textcolorPress + # Строка Давление слева
                     '; font-size: ' +
-                    str(int(25 * xscale * Config.fontmult)) +
+                    str(int(26 * xscale * Config.fontmult)) +
                     'px; ' +
                     Config.fontattr +
                     '}')
-press.setAlignment(Qt.AlignHCenter | Qt.AlignTop)
-press.setGeometry(int(3 * xscale), int(ypos * yscale), int(300 * xscale), 100)
+press.setAlignment(Qt.AlignLeft | Qt.AlignTop)
+press.setGeometry(int(10 * xscale), int(ypos * yscale), int(400 * xscale), 100)
 
 ypos += 30
 humidity = QtWidgets.QLabel(foreGround)
 humidity.setObjectName('humidity')
 humidity.setStyleSheet('#humidity { background-color: transparent; color: ' +
-                       Config.textcolor +
+                       Config.textcolorHumidity +  #                          Цвет строка Влажность
                        '; font-size: ' +
                        str(int(25 * xscale * Config.fontmult)) +
                        'px; ' +
                        Config.fontattr +
                        '}')
-humidity.setAlignment(Qt.AlignHCenter | Qt.AlignTop)
-humidity.setGeometry(int(3 * xscale), int(ypos * yscale), int(300 * xscale), 100)
+humidity.setAlignment(Qt.AlignLeft | Qt.AlignTop)
+humidity.setGeometry(int(10 * xscale), int(ypos * yscale), int(500 * xscale), 100)
 
 ypos += 30
 wind = QtWidgets.QLabel(foreGround)
@@ -2569,20 +2568,20 @@ wind.setObjectName('wind')
 wind.setStyleSheet('#wind { background-color: transparent; color: ' +
                    Config.textcolor +
                    '; font-size: ' +
-                   str(int(20 * xscale * Config.fontmult)) +
+                   str(int(21 * xscale * Config.fontmult)) +
                    'px; ' +
                    Config.fontattr +
                    '}')
-wind.setAlignment(Qt.AlignHCenter | Qt.AlignTop)
-wind.setGeometry(int(3 * xscale), int(ypos * yscale), int(300 * xscale), 100)
+wind.setAlignment(Qt.AlignLeft | Qt.AlignTop)
+wind.setGeometry(int(10 * xscale), int(ypos * yscale), int(500 * xscale), 100)
 
 ypos += 20
 feelslike = QtWidgets.QLabel(foreGround)
 feelslike.setObjectName('feelslike')
 feelslike.setStyleSheet('#feelslike { background-color: transparent; color: ' +
-                        Config.textcolor +
+                        Config.textcolorFeelslike + #                            Цвет по Ощущению
                         '; font-size: ' +
-                        str(int(20 * xscale * Config.fontmult)) +
+                        str(int(21 * xscale * Config.fontmult)) +
                         'px; ' +
                         Config.fontattr +
                         '}')
@@ -2605,19 +2604,19 @@ wdate.setGeometry(int(3 * xscale), int(ypos * yscale), int(300 * xscale), 100)
 bottom = QtWidgets.QLabel(foreGround)
 bottom.setObjectName('bottom')
 bottom.setStyleSheet('#bottom { font-family:sans-serif; color: ' +
-                     Config.textcolor +
+                     Config.textcolorBottom +  # Цвет нижняя строка Восх, Зах, Луна
                      '; background-color: transparent; font-size: ' +
-                     str(int(30 * xscale * Config.fontmult)) +
+                     str(int(25 * xscale * Config.fontmult)) +
                      'px; ' +
                      Config.fontattr +
                      '}')
 bottom.setAlignment(Qt.AlignHCenter | Qt.AlignTop)
-bottom.setGeometry(0, int(height - 50 * yscale), width, int(50 * yscale))
+bottom.setGeometry(0, int(height - 30 * yscale), width, int(50 * yscale))
 
 temp = QtWidgets.QLabel(foreGround)
 temp.setObjectName('temp')
 temp.setStyleSheet('#temp { font-family:sans-serif; color: ' +
-                   Config.textcolor +
+                   Config.textcolorTempInDoor + # Цвет Температура В помещении
                    '; background-color: transparent; font-size: ' +
                    str(int(30 * xscale * Config.fontmult)) +
                    'px; ' +
@@ -2625,6 +2624,21 @@ temp.setStyleSheet('#temp { font-family:sans-serif; color: ' +
                    '}')
 temp.setAlignment(Qt.AlignHCenter | Qt.AlignTop)
 temp.setGeometry(0, int(height - 100 * yscale), width, int(50 * yscale))
+
+#                              строка Видимость, Облачность, УФ индекс
+ypos += 450
+fields = QtWidgets.QLabel(foreGround)
+fields.setObjectName("fields")
+fields.setStyleSheet("#fields { background-color: transparent; color: " +
+                    Config.colorfields +
+                    "; font-size: " +
+                    str(int(29 * xscale * Config.fontmult)) +
+                    "px; " +
+                    Config.fontattr +
+                    "}")
+fields.setAlignment(Qt.AlignHCenter | Qt.AlignTop)
+fields.setGeometry(0, int(height - 150 * yscale), width, int(50 * yscale))
+fields.raise_()
 
 owmonecall = True
 tzlatlng = pytz.utc
@@ -2650,14 +2664,14 @@ for i in range(0, 9):
     wx = QtWidgets.QLabel(lab)
     wx.setStyleSheet('#wx { background-color: transparent; }')
     wx.setGeometry(int(100 * xscale), int(5 * yscale), int(200 * xscale), int(120 * yscale))
-    wx.setAlignment(Qt.AlignLeft | Qt.AlignTop)
+    wx.setAlignment(Qt.AlignHCenter | Qt.AlignTop)
     wx.setWordWrap(True)
     wx.setObjectName('wx')
 
     day = QtWidgets.QLabel(lab)
-    day.setStyleSheet('#day { background-color: transparent; }')
-    day.setGeometry(int(100 * xscale), int(75 * yscale), int(200 * xscale), int(25 * yscale))
-    day.setAlignment(Qt.AlignRight | Qt.AlignBottom)
+    day.setStyleSheet(Config.textcolorDayWeek) # Цвет Дней недели справа 1-9
+    day.setGeometry(int(10 * xscale), int(75 * yscale), int(300 * xscale), int(25 * yscale))
+    day.setAlignment(Qt.AlignLeft | Qt.AlignBottom)
     day.setObjectName('day')
 
     forecast.append(lab)
