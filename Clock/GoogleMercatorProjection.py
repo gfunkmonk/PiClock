@@ -5,6 +5,7 @@ MERCATOR_RANGE = 256
 
 
 def bound(value, opt_min, opt_max):
+    """Bound a value between optional minimum and maximum values."""
     if opt_min is not None:
         value = max(value, opt_min)
     if opt_max is not None:
@@ -13,55 +14,62 @@ def bound(value, opt_min, opt_max):
 
 
 def degrees_to_radians(deg):
-    return deg * (math.pi / 180)
+    """Convert degrees to radians."""
+    return math.radians(deg)
 
 
 def radians_to_degrees(rad):
-    return rad / (math.pi / 180)
+    """Convert radians to degrees."""
+    return math.degrees(rad)
 
 
 class Point:
+    """Represents a 2D point."""
     def __init__(self, x=0, y=0):
         self.x = x
         self.y = y
 
     def __repr__(self):
-        return "Point(%d,%d)" % (self.x, self.y)
+        return f"Point({self.x},{self.y})"
 
     def __str__(self):
-        return "(x=%d,y=%d)" % (self.x, self.y)
+        return f"(x={self.x},y={self.y})"
 
 
 class LatLng:
+    """Represents a geographic coordinate (latitude, longitude)."""
     def __init__(self, lt, ln):
         self.lat = lt
         self.lng = ln
 
     def __repr__(self):
-        return "LatLng(%g,%g)" % (self.lat, self.lng)
+        return f"LatLng({self.lat},{self.lng})"
 
     def __str__(self):
-        return "(lat=%g,lng=%g)" % (self.lat, self.lng)
+        return f"(lat={self.lat},lng={self.lng})"
 
 
 class MercatorProjection:
+    """Mercator projection for converting between geographic coordinates and pixel coordinates."""
 
     def __init__(self):
-        self.pixelOrigin_ = Point(int(MERCATOR_RANGE / 2.0), int(MERCATOR_RANGE / 2.0))
+        self.pixelOrigin_ = Point(MERCATOR_RANGE // 2, MERCATOR_RANGE // 2)
         self.pixelsPerLonDegree_ = MERCATOR_RANGE / 360.0
         self.pixelsPerLonRadian_ = MERCATOR_RANGE / (2.0 * math.pi)
 
     def from_latlng_to_point(self, latlng, opt_point=None):
+        """Convert geographic coordinates to pixel coordinates."""
         point = opt_point if opt_point is not None else Point(0, 0)
         origin = self.pixelOrigin_
         point.x = origin.x + latlng.lng * self.pixelsPerLonDegree_
         # NOTE(appleton): Truncating to 0.9999 effectively limits latitude to
-        # 89.189.This is about a third of a tile past the edge of world tile
+        # 89.189. This is about a third of a tile past the edge of world tile
         siny = bound(math.sin(degrees_to_radians(latlng.lat)), -0.9999, 0.9999)
         point.y = origin.y + 0.5 * math.log((1 + siny) / (1.0 - siny)) * -self.pixelsPerLonRadian_
         return point
 
     def from_point_to_latlng(self, point):
+        """Convert pixel coordinates to geographic coordinates."""
         origin = self.pixelOrigin_
         lng = (point.x - origin.x) / self.pixelsPerLonDegree_
         lat_radians = (point.y - origin.y) / -self.pixelsPerLonRadian_
@@ -70,18 +78,20 @@ class MercatorProjection:
 
 
 def get_point(point, center, zoom, mapwidth, mapheight):
+    """Get pixel coordinates of a point relative to map center."""
     scale = 2.0 ** zoom
     proj = MercatorProjection()
     center_p = proj.from_latlng_to_point(center)
-    center_p.x = center_p.x * scale
-    center_p.y = center_p.y * scale
+    center_p.x *= scale
+    center_p.y *= scale
     subject_p = proj.from_latlng_to_point(point)
-    subject_p.x = subject_p.x * scale
-    subject_p.y = subject_p.y * scale
+    subject_p.x *= scale
+    subject_p.y *= scale
     return Point((subject_p.x - center_p.x) + mapwidth / 2.0, (subject_p.y - center_p.y) + mapheight / 2.0)
 
 
 def get_corners(center, zoom, mapwidth, mapheight):
+    """Get geographic coordinates of map corners."""
     scale = 2.0 ** zoom
     proj = MercatorProjection()
     center_px = proj.from_latlng_to_point(center)
@@ -89,12 +99,18 @@ def get_corners(center, zoom, mapwidth, mapheight):
     sw_lat_lon = proj.from_point_to_latlng(sw_point)
     ne_point = Point(center_px.x + (mapwidth / 2.0) / scale, center_px.y - (mapheight / 2.0) / scale)
     ne_lat_lon = proj.from_point_to_latlng(ne_point)
-    return {'N': ne_lat_lon.lat, 'E': ne_lat_lon.lng, 'S': sw_lat_lon.lat, 'W': sw_lat_lon.lng, }
+    return {
+        'N': ne_lat_lon.lat,
+        'E': ne_lat_lon.lng,
+        'S': sw_lat_lon.lat,
+        'W': sw_lat_lon.lng,
+    }
 
 
 # https://wiki.openstreetmap.org/wiki/Slippy_map_tilenames
 
 def get_tile_xy(latlng, zoom):
+    """Get tile coordinates for a geographic location at a given zoom level."""
     lat_rad = math.radians(latlng.lat)
     n = 2.0 ** zoom
     xtile = (latlng.lng + 180.0) / 360.0 * n
