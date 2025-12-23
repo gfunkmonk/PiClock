@@ -1,95 +1,99 @@
 import os
 import re
+import subprocess
+import sys
 
 print('\nUpdating Python Package Manager')
-cmd = 'python3 -m pip install --upgrade pip'
-print(cmd)
-os.system(cmd)
+cmd = [sys.executable, '-m', 'pip', 'install', '--upgrade', 'pip']
+print(' '.join(cmd))
+subprocess.run(cmd, check=False)
 print('\nRemoving old Python Modules')
-cmd = 'python3 -m pip uninstall python-metar -y'
-print(cmd)
-os.system(cmd)
+cmd = [sys.executable, '-m', 'pip', 'uninstall', 'python-metar', '-y']
+print(' '.join(cmd))
+subprocess.run(cmd, check=False)
 print('\nUpdating Python Modules')
-cmd = 'python3 -m pip install -r requirements.txt'
-print(cmd)
-os.system(cmd)
+cmd = [sys.executable, '-m', 'pip', 'install', '-r', 'requirements.txt']
+print(' '.join(cmd))
+subprocess.run(cmd, check=False)
 
 buttonFileName = 'Button/gpio-keys'
-print('\nChecking ' + buttonFileName)
+print(f'\nChecking {buttonFileName}')
 if os.path.isfile(buttonFileName):
-    print('Setting proper permissions on ' + buttonFileName)
+    print(f'Setting proper permissions on {buttonFileName}')
     os.chmod(buttonFileName, 0o744)
 
 apikeysFileName = 'Clock/ApiKeys.py'
-wuapi_re = re.compile('\\s*wuapi\\s*=')
-dsapi_re = re.compile('\\s*dsapi\\s*=')
-ccapi_re = re.compile('\\s*ccapi\\s*=')
-tmapi_re = re.compile('\\s*tmapi\\s*=')
-owmapi_re = re.compile('\\s*owmapi\\s*=')
+wuapi_re = re.compile(r'\s*wuapi\s*=')
+dsapi_re = re.compile(r'\s*dsapi\s*=')
+ccapi_re = re.compile(r'\s*ccapi\s*=')
+tmapi_re = re.compile(r'\s*tmapi\s*=')
+owmapi_re = re.compile(r'\s*owmapi\s*=')
 
-print('\nChecking ' + apikeysFileName)
+print(f'\nChecking {apikeysFileName}')
 if os.path.isfile(apikeysFileName):
     altered = False
     foundtm = False
     foundowm = False
     newfile = ''
-    apikeys = open(apikeysFileName, 'r')
-    for aline in apikeys:
-        if tmapi_re.match(aline):
-            foundtm = True
-        if owmapi_re.match(aline):
-            foundowm = True
-        if wuapi_re.match(aline):
-            print('Removing wuapi key from ' + apikeysFileName)
-            altered = True
-        if dsapi_re.match(aline):
-            print('Removing dsapi key from ' + apikeysFileName)
-            altered = True
-        if ccapi_re.match(aline):
-            print('Removing ccapi key from ' + apikeysFileName)
-            altered = True
-        else:
-            newfile += aline
-    apikeys.close()
+    with open(apikeysFileName, 'r', encoding='utf-8') as apikeys:
+        for aline in apikeys:
+            if tmapi_re.match(aline):
+                foundtm = True
+            if owmapi_re.match(aline):
+                foundowm = True
+            skip_line = False
+            if wuapi_re.match(aline):
+                print(f'Removing wuapi key from {apikeysFileName}')
+                altered = True
+                skip_line = True
+            if dsapi_re.match(aline):
+                print(f'Removing dsapi key from {apikeysFileName}')
+                altered = True
+                skip_line = True
+            if ccapi_re.match(aline):
+                print(f'Removing ccapi key from {apikeysFileName}')
+                altered = True
+                skip_line = True
+            if not skip_line:
+                newfile += aline
 
     if not foundtm and not foundowm:
         print('\nThis version of PiClock requires a new weather API key.')
-        while 1:
+        while True:
             print('Please select your weather provider:')
             print('  <1> OpenWeatherMap.org (https://openweathermap.org/price)')
             print('  <2> Tomorrow.io (https://www.tomorrow.io/weather-api/)')
             print('Selection (1 or 2)')
-            choice = int(input('? '))
-            if 1 <= choice <= 2:
-                break
+            try:
+                choice = int(input('? '))
+                if 1 <= choice <= 2:
+                    break
+            except ValueError:
+                print('Invalid input. Please enter 1 or 2.')
         if choice == 1:
             print('Enter your OpenWeatherMap.org API key.')
-            print('key: '),
-            k = input('key: ')
-            k = k.strip()
+            k = input('key: ').strip()
             if len(k) > 1:
-                newfile += 'owmapi = \'' + k + '\''
+                newfile += f"owmapi = '{k}'\n"
                 altered = True
         else:
             print('Enter your Tomorrow.io API key.')
-            k = input('key: ')
-            k = k.strip()
+            k = input('key: ').strip()
             if len(k) > 1:
-                newfile += 'tmapi = \'' + k + '\''
+                newfile += f"tmapi = '{k}'\n"
                 altered = True
 
     if altered:
-        print('\nWriting updated ' + apikeysFileName)
-        apikeys = open(apikeysFileName, 'w')
-        apikeys.write(newfile)
-        apikeys.close()
+        print(f'\nWriting updated {apikeysFileName}')
+        with open(apikeysFileName, 'w', encoding='utf-8') as apikeys:
+            apikeys.write(newfile)
     else:
-        print('No changes made to ' + apikeysFileName)
+        print(f'No changes made to {apikeysFileName}')
 
-    try:
-        from rpi_ws281x import *  # NOQA
-    except ModuleNotFoundError:
-        print('\nERROR: rpi_ws281x not found')
-        print('NeoAmbi.py now uses rpi-ws281x/rpi-ws281x-python')
-        print('Please install it as follows:')
-        print('python3 -m pip install rpi_ws281x')
+try:
+    import rpi_ws281x  # noqa: F401
+except ModuleNotFoundError:
+    print('\nERROR: rpi_ws281x not found')
+    print('NeoAmbi.py now uses rpi-ws281x/rpi-ws281x-python')
+    print('Please install it as follows:')
+    print(f'{sys.executable} -m pip install rpi_ws281x')

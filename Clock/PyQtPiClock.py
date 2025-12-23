@@ -285,26 +285,26 @@ def tempfinished():
         tempdata = json.loads(tempstr)
     except ValueError:  # includes json.decoder.JSONDecodeError
         print('WARNING:', traceback.format_exc())
-        print('WARNING: Response from localhost: ' + tempstr)
+        print(f'WARNING: Response from localhost: {tempstr}')
         print('WARNING: Moving on...')
         return  # ignore and try again on the next refresh
 
     if tempdata['temp'] == '':
         return
     if Config.metric:
-        s = Config.LInsideTemp + '%.1f' % tempf2tempc(float(tempdata['temp'])) + u'°C'
+        s = Config.LInsideTemp + f"{tempf2tempc(float(tempdata['temp'])):.1f}" + '°C'
         if tempdata['temps']:
             if len(tempdata['temps']) > 1:
                 s = ''
                 for tk in tempdata['temps']:
-                    s += ' ' + tk + ': ' + '%.1f' % tempf2tempc(float(tempdata['temps'][tk])) + u'°C'
+                    s += f" {tk}: {tempf2tempc(float(tempdata['temps'][tk])):.1f}°C"
     else:
-        s = Config.LInsideTemp + tempdata['temp'] + u'°F'
+        s = Config.LInsideTemp + tempdata['temp'] + '°F'
         if tempdata['temps']:
             if len(tempdata['temps']) > 1:
                 s = ''
                 for tk in tempdata['temps']:
-                    s += ' ' + tk + ': ' + tempdata['temps'][tk] + u'°F'
+                    s += f" {tk}: {tempdata['temps'][tk]}°F"
     temp.setText(s)
 
 
@@ -423,12 +423,12 @@ def wxfinished_owm_onecall():
         wxdata = json.loads(wxstr)
     except ValueError:  # includes json.decoder.JSONDecodeError
         print('WARNING:', traceback.format_exc())
-        print('WARNING: Response from api.openweathermap.org: ' + wxstr)
+        print(f'WARNING: Response from api.openweathermap.org: {wxstr}')
         print('WARNING: Moving on...')
         return  # ignore and try again on the next refresh
 
     if 'cod' in wxdata:
-        print('WARNING: Response from api.openweathermap.org: ' + str(wxdata['cod']) + ' - ' + str(wxdata['message']))
+        print(f"WARNING: Response from api.openweathermap.org: {wxdata['cod']} - {wxdata['message']}")
         if wxdata['cod'] == 401:  # Invalid API
             print('WARNING: OpenWeather One Call failed...')
             print('WARNING: Falling back to separate OpenWeather calls for current weather conditions and forecast')
@@ -530,7 +530,7 @@ def wxfinished_owm_onecall():
                     s += Config.LRain + '%.1f' % mm2inches(paccum) + 'in/hr '
             s += '%.0f' % (f['temp']) + u'°F'
 
-        wx.setStyleSheet('#wx { font-size: ' + str(int(19 * xscale * Config.fontmult)) + 'px; }')
+        wx.setStyleSheet(f'#wx {{ font-size: {int(19 * xscale * Config.fontmult)}px; }}')
         wx.setText(f['weather'][0]['description'].title() + '\n' + s)
 
     dt = datetime.datetime.fromtimestamp(int(wxdata['daily'][0]['dt'])).astimezone(tzlocal.get_localzone())
@@ -588,7 +588,7 @@ def wxfinished_owm_onecall():
             s += '%.0f' % f['temp']['max'] + '/' + \
                  '%.0f' % f['temp']['min'] + u'°F'
 
-        wx.setStyleSheet('#wx { font-size: ' + str(int(19 * xscale * Config.fontmult)) + 'px; }')
+        wx.setStyleSheet(f'#wx {{ font-size: {int(19 * xscale * Config.fontmult)}px; }}')
         wx.setText(f['weather'][0]['description'].title() + '\n' + s)
 
 
@@ -604,19 +604,19 @@ def wxfinished_owm_current():
         wxdata = json.loads(wxstr)
     except ValueError:  # includes json.decoder.JSONDecodeError
         print('WARNING:', traceback.format_exc())
-        print('WARNING: Response from api.openweathermap.org: ' + wxstr)
+        print(f'WARNING: Response from api.openweathermap.org: {wxstr}')
         print('WARNING: Moving on...')
         return  # ignore and try again on the next refresh
 
     if 'message' in wxdata:
-        print('ERROR: Response from api.openweathermap.org: ' + str(wxdata['cod']) + ' - ' + str(wxdata['message']))
+        print(f"ERROR: Response from api.openweathermap.org: {wxdata['cod']} - {wxdata['message']}")
         return
 
     f = wxdata
     dt = datetime.datetime.fromtimestamp(int(f['dt'])).astimezone(tzlocal.get_localzone())
     icon = f['weather'][0]['icon']
     icon = owm_code_icons[icon]
-    wxiconpixmap = QtGui.QPixmap(Config.icons + "/" + icon + ".png")
+    wxiconpixmap = QtGui.QPixmap(f"{Config.icons}/{icon}.png")
     wxicon.setPixmap(wxiconpixmap.scaled(
         wxicon.width(), wxicon.height(), Qt.IgnoreAspectRatio,
         Qt.SmoothTransformation))
@@ -672,13 +672,13 @@ def wxfinished_owm_forecast():
         wxdata = json.loads(wxstr)
     except ValueError:  # includes json.decoder.JSONDecodeError
         print('WARNING:', traceback.format_exc())
-        print('WARNING: Response from api.openweathermap.org: ' + wxstr)
+        print(f'WARNING: Response from api.openweathermap.org: {wxstr}')
         print('WARNING: Moving on...')
         return  # ignore and try again on the next refresh
 
     if 'message' in wxdata:
         if wxdata['message']:  # OWM forecast normally includes message of 0... if not 0 or text, print error and return
-            print('ERROR: Response from api.openweathermap.org: ' + str(wxdata['cod']) + ' - ' + str(wxdata['message']))
+            print(f"ERROR: Response from api.openweathermap.org: {wxdata['cod']} - {wxdata['message']}")
             return
 
     for i in range(0, 3):
@@ -895,13 +895,12 @@ def wxfinished_tm_current():
         wxdata = json.loads(wxstr)
     except ValueError:  # includes json.decoder.JSONDecodeError
         print('WARNING:', traceback.format_exc())
-        print('WARNING: Response from api.tomorrow.io: ' + wxstr)
+        print(f'WARNING: Response from api.tomorrow.io: {wxstr}')
         print('WARNING: Moving on...')
         return  # ignore and try again on the next refresh
 
     if 'message' in wxdata:
-        print('ERROR: Response from api.tomorrow.io: ' + str(wxdata['code']) + ' - ' + str(wxdata['type']) + ' - ' +
-              str(wxdata['message']))
+        print(f"ERROR: Response from api.tomorrow.io: {wxdata['code']} - {wxdata['type']} - {wxdata['message']}")
         return
 
     f = wxdata['data']['timelines'][0]['intervals'][0]
@@ -969,13 +968,12 @@ def wxfinished_tm_hourly():
         wxdata2 = json.loads(wxstr2)
     except ValueError:  # includes json.decoder.JSONDecodeError
         print('WARNING:', traceback.format_exc())
-        print('WARNING: Response from api.tomorrow.io: ' + wxstr2)
+        print(f'WARNING: Response from api.tomorrow.io: {wxstr2}')
         print('WARNING: Moving on...')
         return  # ignore and try again on the next refresh
 
     if 'message' in wxdata2:
-        print('ERROR: Response from api.tomorrow.io: ' + str(wxdata2['code']) + ' - ' + wxdata2['type'] + ' - ' +
-              wxdata2['message'])
+        print(f"ERROR: Response from api.tomorrow.io: {wxdata2['code']} - {wxdata2['type']} - {wxdata2['message']}")
         return
 
     for i in range(0, 3):
@@ -1046,13 +1044,12 @@ def wxfinished_tm_daily():
         wxdata3 = json.loads(wxstr3)
     except ValueError:  # includes json.decoder.JSONDecodeError
         print('WARNING:', traceback.format_exc())
-        print('WARNING: Response from api.tomorrow.io: ' + wxstr3)
+        print(f'WARNING: Response from api.tomorrow.io: {wxstr3}')
         print('WARNING: Moving on...')
         return  # ignore and try again on the next refresh
 
     if 'message' in wxdata3:
-        print('ERROR: Response from api.tomorrow.io: ' + str(wxdata3['code']) + ' - ' + wxdata3['type'] + ' - ' +
-              wxdata3['message'])
+        print(f"ERROR: Response from api.tomorrow.io: {wxdata3['code']} - {wxdata3['type']} - {wxdata3['message']}")
         return
 
     dt = dateutil.parser.parse(wxdata3['data']['timelines'][0]['startTime']).astimezone(tzlocal.get_localzone())
