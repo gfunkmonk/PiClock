@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python3
 # small web server that polls 18B20's that it finds
 # and makes them available as a json response
 # see TempNames.py for sensor id to name mapping
@@ -40,12 +40,11 @@ class MyHandler(BaseHTTPRequestHandler):
         self.send_header('Access-Control-Allow-Origin', '*')
         self.end_headers()
         s = {'temp': '', 'temps': {}}
-        lock.acquire()
-        for k in temps:
-            if s['temp'] == '':
-                s['temp'] = "%.1f" % temps[k]
-            s['temps'][sensorname(k)] = "%.1f" % temps[k]
-        lock.release()
+        with lock:
+            for k in temps:
+                if s['temp'] == '':
+                    s['temp'] = f"{temps[k]:.1f}"
+                s['temps'][sensorname(k)] = f"{temps[k]:.1f}"
         self.wfile.write(bytes(json.dumps(s), 'utf-8'))
 
 
@@ -59,10 +58,10 @@ def sensorname(name):
 def t_http():
     try:
         server = HTTPServer(('0.0.0.0', PORT_NUMBER), MyHandler)
-        print('Started httpserver on port ' + str(PORT_NUMBER))
+        print(f'Started httpserver on port {PORT_NUMBER}')
         server.serve_forever()
     except Exception as e:
-        print('An error occurred:', e)
+        print(f'An error occurred: {e}')
         server.server_close()
 
 
@@ -73,39 +72,37 @@ def t_udp():
     sock.bind(server_address)
     while True:
         data, address = sock.recvfrom(4096)
-        (addr, temp) = str(data).split(':')
+        (addr, temp) = str(data, 'utf-8').split(':')
         saddr = [addr[i:i + 2] for i in range(0, len(addr), 2)]
         saddr.reverse()
         saddr = saddr[1:7]
         addr = ''.join(saddr)
         tempf = float(temp) * 9.0 / 5.0 + 32.0
-        lock.acquire()
-        temps[addr] = tempf
-        temptimes[addr] = time.time()
-        lock.release()
-        print('udp>' + addr + ':' + str(tempf))
+        with lock:
+            temps[addr] = tempf
+            temptimes[addr] = time.time()
+        print(f'udp>{addr}:{tempf}')
 
 
 def t_temp():
     while True:
         for sensor in W1ThermSensor.get_available_sensors():
-            lock.acquire()
-            temps[sensor.id] = sensor.get_temperature(Unit.DEGREES_F)
-            temptimes[sensor.id] = time.time()
-            print('hwr>' + sensor.id + ':' + str(temps[sensor.id]))
-            lock.release()
+            temp_f = sensor.get_temperature(Unit.DEGREES_F)
+            with lock:
+                temps[sensor.id] = temp_f
+                temptimes[sensor.id] = time.time()
+            print(f'hwr>{sensor.id}:{temp_f}')
 
-        lock.acquire()
-        todelete = []
-        expire = time.time() - 60 * 10
-        for t in temptimes:
-            if temptimes[t] < expire:
-                todelete.append(t)
-        for t in todelete:
-            temptimes.pop(t, None)
-            temps.pop(t, None)
-            print('del>' + t)
-        lock.release()
+        with lock:
+            todelete = []
+            expire = time.time() - 60 * 10
+            for t in temptimes:
+                if temptimes[t] < expire:
+                    todelete.append(t)
+            for t in todelete:
+                temptimes.pop(t, None)
+                temps.pop(t, None)
+                print(f'del>{t}')
 
         time.sleep(120)
 

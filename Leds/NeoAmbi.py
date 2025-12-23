@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python3
 # Must be run under sudo
 # Requires: sudo pip3 install rpi_ws281x
 
@@ -34,18 +34,9 @@ LED_INVERT = 0
 
 # from RGB in float 0..1.0 to NeoPixel Color 0..255
 def to_neopixel_color(r, g, b):
-    if r > 1:
-        r = 1
-    if g > 1:
-        g = 1
-    if b > 1:
-        b = 1
-    if r < 0:
-        r = 0
-    if g < 0:
-        g = 0
-    if b < 0:
-        b = 0
+    r = max(0, min(1, r))
+    g = max(0, min(1, g))
+    b = max(0, min(1, b))
     c = ((int(r * 255) & 0xff) << 16 |
          (int(g * 255) & 0xff) << 8 | (int(b * 255) & 0xff))
     return c
@@ -65,7 +56,7 @@ ws.ws2811_t_dmanum_set(leds, LED_DMA_NUM)
 
 resp = ws.ws2811_init(leds)
 if resp != 0:
-    raise RuntimeError('ws2811_init failed with code {0}'.format(resp))
+    raise RuntimeError(f'ws2811_init failed with code {resp}')
 
 try:
     offset = 0
@@ -81,8 +72,7 @@ try:
 
         resp = ws.ws2811_render(leds)
         if resp != 0:
-            raise RuntimeError('ws2811_render failed with code {0}'.
-                               format(resp))
+            raise RuntimeError(f'ws2811_render failed with code {resp}')
 
         sleep(0.2)
 
@@ -91,6 +81,6 @@ finally:
         ws.ws2811_led_set(channel, i, 0)
     resp = ws.ws2811_render(leds)
     if resp != 0:
-        raise RuntimeError('ws2811_render failed with code {0}'.format(resp))
+        raise RuntimeError(f'ws2811_render failed with code {resp}')
     ws.ws2811_fini(leds)
     ws.delete_ws2811_t(leds)
