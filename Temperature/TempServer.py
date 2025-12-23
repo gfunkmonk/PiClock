@@ -72,7 +72,11 @@ def t_udp():
     sock.bind(server_address)
     while True:
         data, address = sock.recvfrom(4096)
-        (addr, temp) = str(data, 'utf-8').split(':')
+        try:
+            (addr, temp) = data.decode('utf-8').split(':')
+        except (UnicodeDecodeError, ValueError):
+            print(f'udp>Error decoding data from {address}')
+            continue
         saddr = [addr[i:i + 2] for i in range(0, len(addr), 2)]
         saddr.reverse()
         saddr = saddr[1:7]

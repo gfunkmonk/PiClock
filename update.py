@@ -41,16 +41,20 @@ if os.path.isfile(apikeysFileName):
                 foundtm = True
             if owmapi_re.match(aline):
                 foundowm = True
+            skip_line = False
             if wuapi_re.match(aline):
                 print(f'Removing wuapi key from {apikeysFileName}')
                 altered = True
-            elif dsapi_re.match(aline):
+                skip_line = True
+            if dsapi_re.match(aline):
                 print(f'Removing dsapi key from {apikeysFileName}')
                 altered = True
-            elif ccapi_re.match(aline):
+                skip_line = True
+            if ccapi_re.match(aline):
                 print(f'Removing ccapi key from {apikeysFileName}')
                 altered = True
-            else:
+                skip_line = True
+            if not skip_line:
                 newfile += aline
 
     if not foundtm and not foundowm:

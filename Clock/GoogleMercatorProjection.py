@@ -53,7 +53,7 @@ class MercatorProjection:
     """Mercator projection for converting between geographic coordinates and pixel coordinates."""
 
     def __init__(self):
-        self.pixelOrigin_ = Point(MERCATOR_RANGE // 2, MERCATOR_RANGE // 2)
+        self.pixelOrigin_ = Point(int(MERCATOR_RANGE / 2.0), int(MERCATOR_RANGE / 2.0))
         self.pixelsPerLonDegree_ = MERCATOR_RANGE / 360.0
         self.pixelsPerLonRadian_ = MERCATOR_RANGE / (2.0 * math.pi)
 
