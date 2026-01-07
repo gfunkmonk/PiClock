@@ -416,7 +416,14 @@ def get_cached_icon(icon_name):
     """Load icon pixmap with caching to reduce memory and I/O overhead."""
     if icon_name not in _icon_cache:
         icon_path = Config.icons + '/' + icon_name + '.png'
-        _icon_cache[icon_name] = QtGui.QPixmap(icon_path)
+        pixmap = QtGui.QPixmap(icon_path)
+        # Only cache valid pixmaps to avoid caching errors
+        if not pixmap.isNull():
+            _icon_cache[icon_name] = pixmap
+        else:
+            print(f'WARNING: Failed to load icon: {icon_path}')
+            # Return a default empty pixmap but don't cache it
+            return pixmap
     return _icon_cache[icon_name]
 
 
@@ -1637,8 +1644,9 @@ class SlideShow(QtWidgets.QLabel):
                 if os.path.isfile(full_file) and (full_file.lower().endswith('png')
                                                   or full_file.lower().endswith('jpg')):
                     new_img_list.append(full_file)
-            # Only update if list has changed to avoid unnecessary memory allocation
-            if new_img_list != self.img_list:
+            # Only update if list length or content has changed
+            # Compare lengths first for efficiency
+            if len(new_img_list) != len(self.img_list) or set(new_img_list) != set(self.img_list):
                 self.img_list = new_img_list
         except OSError:
             print('ERROR:', traceback.format_exc())

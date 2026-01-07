@@ -68,7 +68,8 @@ try:
         for i in range(LED_COUNT):
             p = i / led_count_float  # 0.0..1.0 by position on string
             q = p + fractionOfMinute
-            if q > 1.0:
+            # Use while loop to handle all overflow cases (q could be > 2.0)
+            while q > 1.0:
                 q = q - 1.0  # normalize for overflow
             (r, g, b) = colorsys.hsv_to_rgb(q, 1.0, 1.0)
             ws.ws2811_led_set(channel, i, to_neopixel_color(r, g, b))
