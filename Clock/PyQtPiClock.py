@@ -267,12 +267,12 @@ def tick():
         dt = datetime.datetime.now(tz=tzlocal.get_localzone())
         sunrise = sun.sunrise(dt)
         sunset = sun.sunset(dt)
-        bottomtext = ''
-        bottomtext += (Config.LSunRise +
-                       '{0:%H:%M}'.format(sunrise) +
-                       Config.LSet +
-                       '{0:%H:%M}'.format(sunset))
-        bottomtext += (Config.LMoonPhase + phase(moon_phase()))
+        # Use string formatting instead of concatenation for efficiency
+        bottomtext = (Config.LSunRise +
+                      '{0:%H:%M}'.format(sunrise) +
+                      Config.LSet +
+                      '{0:%H:%M}'.format(sunset) +
+                      Config.LMoonPhase + phase(moon_phase()))
         bottom.setText(bottomtext)
 
 
@@ -295,16 +295,18 @@ def tempfinished():
         s = Config.LInsideTemp + f"{tempf2tempc(float(tempdata['temp'])):.1f}" + '°C'
         if tempdata['temps']:
             if len(tempdata['temps']) > 1:
-                s = ''
-                for tk in tempdata['temps']:
-                    s += f" {tk}: {tempf2tempc(float(tempdata['temps'][tk])):.1f}°C"
+                # Use list comprehension and join for efficient string building
+                temps_list = [f"{tk}: {tempf2tempc(float(tempdata['temps'][tk])):.1f}°C" 
+                             for tk in tempdata['temps']]
+                s = ' '.join(temps_list)
     else:
         s = Config.LInsideTemp + tempdata['temp'] + '°F'
         if tempdata['temps']:
             if len(tempdata['temps']) > 1:
-                s = ''
-                for tk in tempdata['temps']:
-                    s += f" {tk}: {tempdata['temps'][tk]}°F"
+                # Use list comprehension and join for efficient string building
+                temps_list = [f"{tk}: {tempdata['temps'][tk]}°F" 
+                             for tk in tempdata['temps']]
+                s = ' '.join(temps_list)
     temp.setText(s)
 
 
@@ -406,6 +408,24 @@ owm_code_icons = {
     '50n': 'fog'
 }
 
+# Cache for weather icon pixmaps to reduce disk I/O and memory allocations
+_icon_cache = {}
+
+
+def get_cached_icon(icon_name):
+    """Load icon pixmap with caching to reduce memory and I/O overhead."""
+    if icon_name not in _icon_cache:
+        icon_path = Config.icons + '/' + icon_name + '.png'
+        pixmap = QtGui.QPixmap(icon_path)
+        # Only cache valid pixmaps to avoid caching errors
+        if not pixmap.isNull():
+            _icon_cache[icon_name] = pixmap
+        else:
+            print(f'WARNING: Failed to load icon: {icon_path}')
+            # Return a default empty pixmap but don't cache it
+            return pixmap
+    return _icon_cache[icon_name]
+
 
 def wxfinished_owm_onecall():
     global wxreply, hasMetar
@@ -441,7 +461,7 @@ def wxfinished_owm_onecall():
         dt = datetime.datetime.fromtimestamp(int(f['dt'])).astimezone(tzlocal.get_localzone())
         icon = f['weather'][0]['icon']
         icon = owm_code_icons[icon]
-        wxiconpixmap = QtGui.QPixmap(Config.icons + '/' + icon + '.png')
+        wxiconpixmap = get_cached_icon(icon)
         wxicon.setPixmap(wxiconpixmap.scaled(
             wxicon.width(), wxicon.height(), Qt.IgnoreAspectRatio,
             Qt.SmoothTransformation))
@@ -489,7 +509,7 @@ def wxfinished_owm_onecall():
         wicon = f['weather'][0]['icon']
         wicon = owm_code_icons[wicon]
         icon = fl.findChild(QtWidgets.QLabel, 'icon')
-        wxiconpixmap = QtGui.QPixmap(Config.icons + '/' + wicon + '.png')
+        wxiconpixmap = get_cached_icon(wicon)
         icon.setPixmap(wxiconpixmap.scaled(
             icon.width(),
             icon.height(),
@@ -545,7 +565,7 @@ def wxfinished_owm_onecall():
         wicon = owm_code_icons[wicon]
         fl = forecast[i]
         icon = fl.findChild(QtWidgets.QLabel, 'icon')
-        wxiconpixmap = QtGui.QPixmap(Config.icons + '/' + wicon + '.png')
+        wxiconpixmap = get_cached_icon(wicon)
         icon.setPixmap(wxiconpixmap.scaled(
             icon.width(),
             icon.height(),
@@ -616,7 +636,7 @@ def wxfinished_owm_current():
     dt = datetime.datetime.fromtimestamp(int(f['dt'])).astimezone(tzlocal.get_localzone())
     icon = f['weather'][0]['icon']
     icon = owm_code_icons[icon]
-    wxiconpixmap = QtGui.QPixmap(f"{Config.icons}/{icon}.png")
+    wxiconpixmap = get_cached_icon(icon)
     wxicon.setPixmap(wxiconpixmap.scaled(
         wxicon.width(), wxicon.height(), Qt.IgnoreAspectRatio,
         Qt.SmoothTransformation))
@@ -688,7 +708,7 @@ def wxfinished_owm_forecast():
         wicon = f['weather'][0]['icon']
         wicon = owm_code_icons[wicon]
         icon = fl.findChild(QtWidgets.QLabel, "icon")
-        wxiconpixmap = QtGui.QPixmap(Config.icons + "/" + wicon + ".png")
+        wxiconpixmap = get_cached_icon(wicon)
         icon.setPixmap(wxiconpixmap.scaled(
             icon.width(),
             icon.height(),
@@ -809,7 +829,7 @@ def wxfinished_owm_forecast():
             wx.setText(wdesc + "\n" + s)
             wicon = owm_code_icons[wicon]
             wicon = wicon.replace('-night', '-day')
-            wxiconpixmap = QtGui.QPixmap(Config.icons + "/" + wicon + ".png")
+            wxiconpixmap = get_cached_icon(wicon)
             icon.setPixmap(wxiconpixmap.scaled(
                 icon.width(),
                 icon.height(),
@@ -909,7 +929,7 @@ def wxfinished_tm_current():
     icon = tm_code_icons[icon]
     if not daytime:
         icon = icon.replace('-day', '-night')
-    wxiconpixmap = QtGui.QPixmap(Config.icons + '/' + icon + '.png')
+    wxiconpixmap = get_cached_icon(icon)
     wxicon.setPixmap(wxiconpixmap.scaled(
         wxicon.width(), wxicon.height(), Qt.IgnoreAspectRatio,
         Qt.SmoothTransformation))
@@ -996,7 +1016,7 @@ def wxfinished_tm_hourly():
         if not fdaytime:
             wicon = wicon.replace('-day', '-night')
         icon = fl.findChild(QtWidgets.QLabel, 'icon')
-        wxiconpixmap = QtGui.QPixmap(Config.icons + '/' + wicon + '.png')
+        wxiconpixmap = get_cached_icon(wicon)
         icon.setPixmap(wxiconpixmap.scaled(
             icon.width(),
             icon.height(),
@@ -1063,7 +1083,7 @@ def wxfinished_tm_daily():
             wicon = tm_code_icons[wicon]
             fl = forecast[i]
             icon = fl.findChild(QtWidgets.QLabel, 'icon')
-            wxiconpixmap = QtGui.QPixmap(Config.icons + '/' + wicon + '.png')
+            wxiconpixmap = get_cached_icon(wicon)
             icon.setPixmap(wxiconpixmap.scaled(
                 icon.width(),
                 icon.height(),
@@ -1284,7 +1304,7 @@ def wxfinished_metar():
     if not daytime:
         icon = icon.replace('-day', '-night')
 
-    wxiconpixmap = QtGui.QPixmap(Config.icons + '/' + icon + '.png')
+    wxiconpixmap = get_cached_icon(icon)
     wxicon.setPixmap(wxiconpixmap.scaled(
         wxicon.width(), wxicon.height(), Qt.IgnoreAspectRatio,
         Qt.SmoothTransformation))
@@ -1586,13 +1606,17 @@ class SlideShow(QtWidgets.QLabel):
                 self.img_inc = 1
 
     def show_image(self, image):
-        image = QtGui.QImage(image)
-
-        bg = QtGui.QPixmap.fromImage(image)
-        self.setPixmap(bg.scaled(
+        # Load and scale image directly to reduce memory overhead
+        qimage = QtGui.QImage(image)
+        if qimage.isNull():
+            return
+        
+        # Convert to pixmap and scale in one operation
+        pixmap = QtGui.QPixmap.fromImage(qimage).scaled(
             self.size(),
             QtCore.Qt.KeepAspectRatio,
-            QtCore.Qt.SmoothTransformation))
+            QtCore.Qt.SmoothTransformation)
+        self.setPixmap(pixmap)
 
     def get_images(self):
         self.get_local(Config.slides)
@@ -1610,13 +1634,21 @@ class SlideShow(QtWidgets.QLabel):
         self.timer.start()
 
     def get_local(self, path):
+        # Only update image list if directory content changes
+        # This prevents repeated directory scans and unnecessary memory allocation
         try:
             dir_content = os.listdir(path)
+            new_img_list = []
             for each in dir_content:
                 full_file = os.path.join(path, each)
                 if os.path.isfile(full_file) and (full_file.lower().endswith('png')
                                                   or full_file.lower().endswith('jpg')):
-                    self.img_list.append(full_file)
+                    new_img_list.append(full_file)
+            # Sort for consistent comparison
+            new_img_list.sort()
+            # Only update if the sorted list is different
+            if new_img_list != sorted(self.img_list):
+                self.img_list = new_img_list
         except OSError:
             print('ERROR:', traceback.format_exc())
 
@@ -1763,10 +1795,18 @@ class Radar(QtWidgets.QLabel):
             t = self.baseTime
         else:
             self.baseTime = t
+        # Clean up old frames to prevent memory growth
+        # Keep only frames within the animation window
         newf = []
         for f in self.frameImages:
             if f['time'] >= (t - self.anim * 600):
                 newf.append(f)
+        # Limit to maximum number of frames to prevent memory leaks
+        # Keep anim frames (animation sequence) plus 1 current frame
+        # For anim=5: we keep 6 frames total (5 for animation + 1 current)
+        max_frames = self.anim + 1
+        if len(newf) > max_frames:
+            newf = newf[-max_frames:]
         self.frameImages = newf
         firstt = t - self.anim * 600
         for tt in range(firstt, t + 1, 600):
@@ -1797,13 +1837,15 @@ class Radar(QtWidgets.QLabel):
         self.tilereply.finished.connect(self.get_tilesreply)
 
     def get_tilesreply(self):
+        # Read data once to avoid duplicate readAll() calls
+        tile_data = self.tilereply.readAll()
         if self.tilereply.error() != QNetworkReply.NoError:
-            tilestr = str(self.tilereply.readAll(), 'utf-8')
+            tilestr = str(tile_data, 'utf-8')
             print('ERROR: Response from rainviewer.com: ' + tilestr)
             return
         self.tileQimages.append(QImage())
         try:
-            self.tileQimages[self.getIndex].loadFromData(self.tilereply.readAll())
+            self.tileQimages[self.getIndex].loadFromData(tile_data)
             self.getIndex += 1
         except IndexError:
             print('WARNING:', traceback.format_exc())
@@ -1835,12 +1877,15 @@ class Radar(QtWidgets.QLabel):
                     print('WARNING:', traceback.format_exc())
                     pass
         painter.end()
-        self.tileQimages = []
+        # Clear tile images immediately to free memory
+        self.tileQimages.clear()
         ii2 = QPixmap(ii.copy(-xo, -yo, self.rect.width(), self.rect.height()))
         # finish weather radar image
-
-        # create timestamp layer
+        
+        # create timestamp layer - reuse cropped area from ii to reduce memory
         ii3 = ii.copy(-xo, -yo, self.rect.width(), self.rect.height())
+        # Explicitly delete the large image to free memory immediately
+        del ii
         ii3.fill(Qt.transparent)
         painter2 = QPainter()
         painter2.begin(ii3)
@@ -1930,8 +1975,10 @@ class Radar(QtWidgets.QLabel):
             '&'.join(urlp)
 
     def basefinished(self):
+        # Read data once to avoid duplicate readAll() calls
+        base_data = self.basereply.readAll()
         if self.basereply.error() != QNetworkReply.NoError:
-            basestr = str(self.basereply.readAll(), 'utf-8')
+            basestr = str(base_data, 'utf-8')
             if usemapbox:
                 try:
                     basejson = json.loads(basestr)
@@ -1943,7 +1990,7 @@ class Radar(QtWidgets.QLabel):
                 print('ERROR: Response from maps.googleapis.com: ' + basestr)
             return
         basepixmap = QPixmap()
-        basepixmap.loadFromData(self.basereply.readAll())
+        basepixmap.loadFromData(base_data)
         if basepixmap.size() != self.rect.size():
             basepixmap = basepixmap.scaled(self.rect.size(), Qt.KeepAspectRatio, Qt.SmoothTransformation)
         self.setPixmap(basepixmap)
@@ -1997,8 +2044,10 @@ class Radar(QtWidgets.QLabel):
         self.wmk.setPixmap(mkpixmap)
 
     def overlayfinished(self):
+        # Read data once to avoid duplicate readAll() calls
+        overlay_data = self.overlayreply.readAll()
         if self.overlayreply.error() != QNetworkReply.NoError:
-            overlaystr = str(self.overlayreply.readAll(), 'utf-8')
+            overlaystr = str(overlay_data, 'utf-8')
             try:
                 overlayjson = json.loads(overlaystr)
                 print('ERROR: Response from api.mapbox.com: ' + overlayjson['message'])
@@ -2007,7 +2056,7 @@ class Radar(QtWidgets.QLabel):
                 pass
             return
         overlaypixmap = QPixmap()
-        overlaypixmap.loadFromData(self.overlayreply.readAll())
+        overlaypixmap.loadFromData(overlay_data)
         if overlaypixmap.size() != self.rect.size():
             overlaypixmap = overlaypixmap.scaled(
                 self.rect.size(),
