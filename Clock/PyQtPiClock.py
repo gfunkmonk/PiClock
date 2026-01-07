@@ -1634,8 +1634,8 @@ class SlideShow(QtWidgets.QLabel):
         self.timer.start()
 
     def get_local(self, path):
-        # Only update image list if it's empty or directory might have changed
-        # This prevents repeated directory scans
+        # Only update image list if directory content changes
+        # This prevents repeated directory scans and unnecessary memory allocation
         try:
             dir_content = os.listdir(path)
             new_img_list = []
@@ -1644,9 +1644,10 @@ class SlideShow(QtWidgets.QLabel):
                 if os.path.isfile(full_file) and (full_file.lower().endswith('png')
                                                   or full_file.lower().endswith('jpg')):
                     new_img_list.append(full_file)
-            # Only update if list length or content has changed
-            # Compare lengths first for efficiency
-            if len(new_img_list) != len(self.img_list) or set(new_img_list) != set(self.img_list):
+            # Sort for consistent comparison
+            new_img_list.sort()
+            # Only update if the sorted list is different
+            if new_img_list != sorted(self.img_list):
                 self.img_list = new_img_list
         except OSError:
             print('ERROR:', traceback.format_exc())
@@ -1800,7 +1801,9 @@ class Radar(QtWidgets.QLabel):
         for f in self.frameImages:
             if f['time'] >= (t - self.anim * 600):
                 newf.append(f)
-        # Limit to maximum number of frames (anim + 1) to prevent memory leaks
+        # Limit to maximum number of frames to prevent memory leaks
+        # Keep anim frames (animation sequence) plus 1 current frame
+        # For anim=5: we keep 6 frames total (5 for animation + 1 current)
         max_frames = self.anim + 1
         if len(newf) > max_frames:
             newf = newf[-max_frames:]
@@ -1881,8 +1884,8 @@ class Radar(QtWidgets.QLabel):
         
         # create timestamp layer - reuse cropped area from ii to reduce memory
         ii3 = ii.copy(-xo, -yo, self.rect.width(), self.rect.height())
-        # Clear the large image to free memory
-        ii = None
+        # Explicitly delete the large image to free memory immediately
+        del ii
         ii3.fill(Qt.transparent)
         painter2 = QPainter()
         painter2.begin(ii3)
