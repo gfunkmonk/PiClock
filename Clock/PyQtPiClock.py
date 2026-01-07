@@ -267,12 +267,12 @@ def tick():
         dt = datetime.datetime.now(tz=tzlocal.get_localzone())
         sunrise = sun.sunrise(dt)
         sunset = sun.sunset(dt)
-        bottomtext = ''
-        bottomtext += (Config.LSunRise +
-                       '{0:%H:%M}'.format(sunrise) +
-                       Config.LSet +
-                       '{0:%H:%M}'.format(sunset))
-        bottomtext += (Config.LMoonPhase + phase(moon_phase()))
+        # Use string formatting instead of concatenation for efficiency
+        bottomtext = (Config.LSunRise +
+                      '{0:%H:%M}'.format(sunrise) +
+                      Config.LSet +
+                      '{0:%H:%M}'.format(sunset) +
+                      Config.LMoonPhase + phase(moon_phase()))
         bottom.setText(bottomtext)
 
 
@@ -408,6 +408,17 @@ owm_code_icons = {
     '50n': 'fog'
 }
 
+# Cache for weather icon pixmaps to reduce disk I/O and memory allocations
+_icon_cache = {}
+
+
+def get_cached_icon(icon_name):
+    """Load icon pixmap with caching to reduce memory and I/O overhead."""
+    if icon_name not in _icon_cache:
+        icon_path = Config.icons + '/' + icon_name + '.png'
+        _icon_cache[icon_name] = QtGui.QPixmap(icon_path)
+    return _icon_cache[icon_name]
+
 
 def wxfinished_owm_onecall():
     global wxreply, hasMetar
@@ -443,7 +454,7 @@ def wxfinished_owm_onecall():
         dt = datetime.datetime.fromtimestamp(int(f['dt'])).astimezone(tzlocal.get_localzone())
         icon = f['weather'][0]['icon']
         icon = owm_code_icons[icon]
-        wxiconpixmap = QtGui.QPixmap(Config.icons + '/' + icon + '.png')
+        wxiconpixmap = get_cached_icon(icon)
         wxicon.setPixmap(wxiconpixmap.scaled(
             wxicon.width(), wxicon.height(), Qt.IgnoreAspectRatio,
             Qt.SmoothTransformation))
@@ -491,7 +502,7 @@ def wxfinished_owm_onecall():
         wicon = f['weather'][0]['icon']
         wicon = owm_code_icons[wicon]
         icon = fl.findChild(QtWidgets.QLabel, 'icon')
-        wxiconpixmap = QtGui.QPixmap(Config.icons + '/' + wicon + '.png')
+        wxiconpixmap = get_cached_icon(wicon)
         icon.setPixmap(wxiconpixmap.scaled(
             icon.width(),
             icon.height(),
@@ -547,7 +558,7 @@ def wxfinished_owm_onecall():
         wicon = owm_code_icons[wicon]
         fl = forecast[i]
         icon = fl.findChild(QtWidgets.QLabel, 'icon')
-        wxiconpixmap = QtGui.QPixmap(Config.icons + '/' + wicon + '.png')
+        wxiconpixmap = get_cached_icon(wicon)
         icon.setPixmap(wxiconpixmap.scaled(
             icon.width(),
             icon.height(),
@@ -618,7 +629,7 @@ def wxfinished_owm_current():
     dt = datetime.datetime.fromtimestamp(int(f['dt'])).astimezone(tzlocal.get_localzone())
     icon = f['weather'][0]['icon']
     icon = owm_code_icons[icon]
-    wxiconpixmap = QtGui.QPixmap(f"{Config.icons}/{icon}.png")
+    wxiconpixmap = get_cached_icon(icon)
     wxicon.setPixmap(wxiconpixmap.scaled(
         wxicon.width(), wxicon.height(), Qt.IgnoreAspectRatio,
         Qt.SmoothTransformation))
@@ -690,7 +701,7 @@ def wxfinished_owm_forecast():
         wicon = f['weather'][0]['icon']
         wicon = owm_code_icons[wicon]
         icon = fl.findChild(QtWidgets.QLabel, "icon")
-        wxiconpixmap = QtGui.QPixmap(Config.icons + "/" + wicon + ".png")
+        wxiconpixmap = get_cached_icon(wicon)
         icon.setPixmap(wxiconpixmap.scaled(
             icon.width(),
             icon.height(),
@@ -811,7 +822,7 @@ def wxfinished_owm_forecast():
             wx.setText(wdesc + "\n" + s)
             wicon = owm_code_icons[wicon]
             wicon = wicon.replace('-night', '-day')
-            wxiconpixmap = QtGui.QPixmap(Config.icons + "/" + wicon + ".png")
+            wxiconpixmap = get_cached_icon(wicon)
             icon.setPixmap(wxiconpixmap.scaled(
                 icon.width(),
                 icon.height(),
@@ -911,7 +922,7 @@ def wxfinished_tm_current():
     icon = tm_code_icons[icon]
     if not daytime:
         icon = icon.replace('-day', '-night')
-    wxiconpixmap = QtGui.QPixmap(Config.icons + '/' + icon + '.png')
+    wxiconpixmap = get_cached_icon(icon)
     wxicon.setPixmap(wxiconpixmap.scaled(
         wxicon.width(), wxicon.height(), Qt.IgnoreAspectRatio,
         Qt.SmoothTransformation))
@@ -998,7 +1009,7 @@ def wxfinished_tm_hourly():
         if not fdaytime:
             wicon = wicon.replace('-day', '-night')
         icon = fl.findChild(QtWidgets.QLabel, 'icon')
-        wxiconpixmap = QtGui.QPixmap(Config.icons + '/' + wicon + '.png')
+        wxiconpixmap = get_cached_icon(wicon)
         icon.setPixmap(wxiconpixmap.scaled(
             icon.width(),
             icon.height(),
@@ -1065,7 +1076,7 @@ def wxfinished_tm_daily():
             wicon = tm_code_icons[wicon]
             fl = forecast[i]
             icon = fl.findChild(QtWidgets.QLabel, 'icon')
-            wxiconpixmap = QtGui.QPixmap(Config.icons + '/' + wicon + '.png')
+            wxiconpixmap = get_cached_icon(wicon)
             icon.setPixmap(wxiconpixmap.scaled(
                 icon.width(),
                 icon.height(),
@@ -1286,7 +1297,7 @@ def wxfinished_metar():
     if not daytime:
         icon = icon.replace('-day', '-night')
 
-    wxiconpixmap = QtGui.QPixmap(Config.icons + '/' + icon + '.png')
+    wxiconpixmap = get_cached_icon(icon)
     wxicon.setPixmap(wxiconpixmap.scaled(
         wxicon.width(), wxicon.height(), Qt.IgnoreAspectRatio,
         Qt.SmoothTransformation))
@@ -1775,10 +1786,16 @@ class Radar(QtWidgets.QLabel):
             t = self.baseTime
         else:
             self.baseTime = t
+        # Clean up old frames to prevent memory growth
+        # Keep only frames within the animation window
         newf = []
         for f in self.frameImages:
             if f['time'] >= (t - self.anim * 600):
                 newf.append(f)
+        # Limit to maximum number of frames (anim + 1) to prevent memory leaks
+        max_frames = self.anim + 1
+        if len(newf) > max_frames:
+            newf = newf[-max_frames:]
         self.frameImages = newf
         firstt = t - self.anim * 600
         for tt in range(firstt, t + 1, 600):
