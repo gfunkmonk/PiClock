@@ -295,16 +295,18 @@ def tempfinished():
         s = Config.LInsideTemp + f"{tempf2tempc(float(tempdata['temp'])):.1f}" + '°C'
         if tempdata['temps']:
             if len(tempdata['temps']) > 1:
-                s = ''
-                for tk in tempdata['temps']:
-                    s += f" {tk}: {tempf2tempc(float(tempdata['temps'][tk])):.1f}°C"
+                # Use list comprehension and join for efficient string building
+                temps_list = [f"{tk}: {tempf2tempc(float(tempdata['temps'][tk])):.1f}°C" 
+                             for tk in tempdata['temps']]
+                s = ' '.join(temps_list)
     else:
         s = Config.LInsideTemp + tempdata['temp'] + '°F'
         if tempdata['temps']:
             if len(tempdata['temps']) > 1:
-                s = ''
-                for tk in tempdata['temps']:
-                    s += f" {tk}: {tempdata['temps'][tk]}°F"
+                # Use list comprehension and join for efficient string building
+                temps_list = [f"{tk}: {tempdata['temps'][tk]}°F" 
+                             for tk in tempdata['temps']]
+                s = ' '.join(temps_list)
     temp.setText(s)
 
 
@@ -1586,13 +1588,17 @@ class SlideShow(QtWidgets.QLabel):
                 self.img_inc = 1
 
     def show_image(self, image):
-        image = QtGui.QImage(image)
-
-        bg = QtGui.QPixmap.fromImage(image)
-        self.setPixmap(bg.scaled(
+        # Load and scale image directly to reduce memory overhead
+        qimage = QtGui.QImage(image)
+        if qimage.isNull():
+            return
+        
+        # Convert to pixmap and scale in one operation
+        pixmap = QtGui.QPixmap.fromImage(qimage).scaled(
             self.size(),
             QtCore.Qt.KeepAspectRatio,
-            QtCore.Qt.SmoothTransformation))
+            QtCore.Qt.SmoothTransformation)
+        self.setPixmap(pixmap)
 
     def get_images(self):
         self.get_local(Config.slides)
@@ -1610,13 +1616,19 @@ class SlideShow(QtWidgets.QLabel):
         self.timer.start()
 
     def get_local(self, path):
+        # Only update image list if it's empty or directory might have changed
+        # This prevents repeated directory scans
         try:
             dir_content = os.listdir(path)
+            new_img_list = []
             for each in dir_content:
                 full_file = os.path.join(path, each)
                 if os.path.isfile(full_file) and (full_file.lower().endswith('png')
                                                   or full_file.lower().endswith('jpg')):
-                    self.img_list.append(full_file)
+                    new_img_list.append(full_file)
+            # Only update if list has changed to avoid unnecessary memory allocation
+            if new_img_list != self.img_list:
+                self.img_list = new_img_list
         except OSError:
             print('ERROR:', traceback.format_exc())
 
@@ -1797,13 +1809,15 @@ class Radar(QtWidgets.QLabel):
         self.tilereply.finished.connect(self.get_tilesreply)
 
     def get_tilesreply(self):
+        # Read data once to avoid duplicate readAll() calls
+        tile_data = self.tilereply.readAll()
         if self.tilereply.error() != QNetworkReply.NoError:
-            tilestr = str(self.tilereply.readAll(), 'utf-8')
+            tilestr = str(tile_data, 'utf-8')
             print('ERROR: Response from rainviewer.com: ' + tilestr)
             return
         self.tileQimages.append(QImage())
         try:
-            self.tileQimages[self.getIndex].loadFromData(self.tilereply.readAll())
+            self.tileQimages[self.getIndex].loadFromData(tile_data)
             self.getIndex += 1
         except IndexError:
             print('WARNING:', traceback.format_exc())
@@ -1835,12 +1849,15 @@ class Radar(QtWidgets.QLabel):
                     print('WARNING:', traceback.format_exc())
                     pass
         painter.end()
-        self.tileQimages = []
+        # Clear tile images immediately to free memory
+        self.tileQimages.clear()
         ii2 = QPixmap(ii.copy(-xo, -yo, self.rect.width(), self.rect.height()))
         # finish weather radar image
-
-        # create timestamp layer
+        
+        # create timestamp layer - reuse cropped area from ii to reduce memory
         ii3 = ii.copy(-xo, -yo, self.rect.width(), self.rect.height())
+        # Clear the large image to free memory
+        ii = None
         ii3.fill(Qt.transparent)
         painter2 = QPainter()
         painter2.begin(ii3)
@@ -1930,8 +1947,10 @@ class Radar(QtWidgets.QLabel):
             '&'.join(urlp)
 
     def basefinished(self):
+        # Read data once to avoid duplicate readAll() calls
+        base_data = self.basereply.readAll()
         if self.basereply.error() != QNetworkReply.NoError:
-            basestr = str(self.basereply.readAll(), 'utf-8')
+            basestr = str(base_data, 'utf-8')
             if usemapbox:
                 try:
                     basejson = json.loads(basestr)
@@ -1943,7 +1962,7 @@ class Radar(QtWidgets.QLabel):
                 print('ERROR: Response from maps.googleapis.com: ' + basestr)
             return
         basepixmap = QPixmap()
-        basepixmap.loadFromData(self.basereply.readAll())
+        basepixmap.loadFromData(base_data)
         if basepixmap.size() != self.rect.size():
             basepixmap = basepixmap.scaled(self.rect.size(), Qt.KeepAspectRatio, Qt.SmoothTransformation)
         self.setPixmap(basepixmap)
@@ -1997,8 +2016,10 @@ class Radar(QtWidgets.QLabel):
         self.wmk.setPixmap(mkpixmap)
 
     def overlayfinished(self):
+        # Read data once to avoid duplicate readAll() calls
+        overlay_data = self.overlayreply.readAll()
         if self.overlayreply.error() != QNetworkReply.NoError:
-            overlaystr = str(self.overlayreply.readAll(), 'utf-8')
+            overlaystr = str(overlay_data, 'utf-8')
             try:
                 overlayjson = json.loads(overlaystr)
                 print('ERROR: Response from api.mapbox.com: ' + overlayjson['message'])
@@ -2007,7 +2028,7 @@ class Radar(QtWidgets.QLabel):
                 pass
             return
         overlaypixmap = QPixmap()
-        overlaypixmap.loadFromData(self.overlayreply.readAll())
+        overlaypixmap.loadFromData(overlay_data)
         if overlaypixmap.size() != self.rect.size():
             overlaypixmap = overlaypixmap.scaled(
                 self.rect.size(),

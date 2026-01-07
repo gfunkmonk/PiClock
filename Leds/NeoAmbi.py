@@ -34,9 +34,11 @@ LED_INVERT = 0
 
 # from RGB in float 0..1.0 to NeoPixel Color 0..255
 def to_neopixel_color(r, g, b):
-    r = max(0, min(1, r))
-    g = max(0, min(1, g))
-    b = max(0, min(1, b))
+    # Clamp values efficiently
+    r = max(0.0, min(1.0, r))
+    g = max(0.0, min(1.0, g))
+    b = max(0.0, min(1.0, b))
+    # Combine into single color value
     c = ((int(r * 255) & 0xff) << 16 |
          (int(g * 255) & 0xff) << 8 | (int(b * 255) & 0xff))
     return c
@@ -59,13 +61,14 @@ if resp != 0:
     raise RuntimeError(f'ws2811_init failed with code {resp}')
 
 try:
-    offset = 0
+    # Precompute LED count as float to avoid repeated conversions
+    led_count_float = float(LED_COUNT)
     while True:
         (fractionOfMinute, dummy) = modf(time() / 60.0)
         for i in range(LED_COUNT):
-            p = i / float(LED_COUNT)  # 0.0..1.0 by position on string
+            p = i / led_count_float  # 0.0..1.0 by position on string
             q = p + fractionOfMinute
-            while q > 1:
+            if q > 1.0:
                 q = q - 1.0  # normalize for overflow
             (r, g, b) = colorsys.hsv_to_rgb(q, 1.0, 1.0)
             ws.ws2811_led_set(channel, i, to_neopixel_color(r, g, b))
