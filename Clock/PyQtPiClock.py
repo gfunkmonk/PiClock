@@ -2774,12 +2774,12 @@ ypos += 450
 fields = QtWidgets.QLabel(foreGround)
 fields.setObjectName("fields")
 fields.setStyleSheet("#fields { background-color: transparent; color: " +
-                      Config.colorfields +
-                      "; font-size: " +
-                      str(int(29 * xscale * Config.fontmult)) +
-                      "px; " +
-                      Config.fontattr +
-                      "}")
+                     Config.colorfields +
+                     "; font-size: " +
+                     str(int(29 * xscale * Config.fontmult)) +
+                     "px; " +
+                     Config.fontattr +
+                     "}")
 fields.setGeometry(0, int(height - 150 * yscale), width, int(50 * yscale))
 fields.raise_()
 
