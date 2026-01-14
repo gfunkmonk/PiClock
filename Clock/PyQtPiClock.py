@@ -29,6 +29,7 @@ sys.dont_write_bytecode = True
 from GoogleMercatorProjection import get_corners, get_point, get_tile_xy, LatLng  # NOQA
 import ApiKeys  # NOQA
 
+
 # --- Daily log rotation (at local midnight), keeping PyQtPiClock.1.log ... .7.log ---
 class _DailyRotatingLineLogger:
     def __init__(self, log_path: str, keep: int = 7, tee_to=None):
@@ -292,13 +293,10 @@ def moon_phase(dt=None):
 
 
 def tick():
-    global hourpixmap, minpixmap, secpixmap
     global hourpixmap2, minpixmap2, secpixmap2
     global lastmin, lastday, lasttimestr
-    global clockrect
-    global datex, datex2, datey2, pdy
-    global sun, daytime, sunrise, sunset
-    global bottom
+    global pdy
+    global daytime, sunrise, sunset
 
     now = datetime.datetime.now(tz=tzlocal.get_localzone())
     if Config.digital:
@@ -408,7 +406,6 @@ def tick():
 
 
 def tempfinished():
-    global tempreply, temp
     if tempreply.error() != QNetworkReply.NoError:
         return
     tempstr = str(tempreply.readAll(), 'utf-8')
@@ -427,16 +424,16 @@ def tempfinished():
         if tempdata['temps']:
             if len(tempdata['temps']) > 1:
                 # Use list comprehension and join for efficient string building
-                temps_list = [f"{tk}: {tempf2tempc(float(tempdata['temps'][tk])):.1f}°C" 
-                             for tk in tempdata['temps']]
+                temps_list = [f"{tk}: {tempf2tempc(float(tempdata['temps'][tk])):.1f}°C"
+                              for tk in tempdata['temps']]
                 s = ' '.join(temps_list)
     else:
         s = Config.LInsideTemp + tempdata['temp'] + '°F'
         if tempdata['temps']:
             if len(tempdata['temps']) > 1:
                 # Use list comprehension and join for efficient string building
-                temps_list = [f"{tk}: {tempdata['temps'][tk]}°F" 
-                             for tk in tempdata['temps']]
+                temps_list = [f"{tk}: {tempdata['temps'][tk]}°F"
+                              for tk in tempdata['temps']]
                 s = ' '.join(temps_list)
     temp.setText(s)
 
@@ -559,10 +556,6 @@ def get_cached_icon(icon_name):
 
 
 def wxfinished_owm_onecall():
-    global wxreply, hasMetar
-    global wxicon, temper, wxdesc, press, humidity
-    global wind, feelslike, wdate, forecast
-    global wxicon2, temper2, wxdesc2, attribution
     global owmonecall
 
     attribution.setText('OpenWeatherMap.org')
@@ -744,10 +737,6 @@ def wxfinished_owm_onecall():
 
 
 def wxfinished_owm_current():
-    global wxreplyc
-    global wxicon, temper, wxdesc, press, humidity
-    global wind, feelslike, wdate
-    global wxicon2, temper2, wxdesc2
 
     wxstr = str(wxreplyc.readAll(), 'utf-8')
 
@@ -810,9 +799,6 @@ def wxfinished_owm_current():
 
 
 def wxfinished_owm_forecast():
-    global wxreplyf, forecast
-    global attribution
-    global tzlatlng
 
     attribution.setText('OpenWeatherMap.org')
     attribution2.setText('OpenWeatherMap.org')
@@ -1034,11 +1020,6 @@ tm_code_icons = {
 
 
 def wxfinished_tm_current():
-    global wxreply
-    global wxicon, temper, wxdesc, press, humidity
-    global wind, feelslike, wdate
-    global wxicon2, temper2, wxdesc2
-    global daytime
 
     wxstr = str(wxreply.readAll(), 'utf-8')
 
@@ -1107,8 +1088,6 @@ def wxfinished_tm_current():
 
 
 def wxfinished_tm_hourly():
-    global wxreply2, forecast
-    global daytime, attribution
 
     attribution.setText('Tomorrow.io')
     attribution2.setText('Tomorrow.io')
@@ -1187,7 +1166,6 @@ def wxfinished_tm_hourly():
 
 
 def wxfinished_tm_daily():
-    global wxreply3, forecast
 
     wxstr3 = str(wxreply3.readAll(), 'utf-8')
 
@@ -1375,11 +1353,6 @@ def feels_like(f):
 
 
 def wxfinished_metar():
-    global metarreply
-    global wxicon, temper, wxdesc, press, humidity
-    global wind, feelslike, wdate
-    global wxicon2, temper2, wxdesc2
-    global daytime
 
     wxstr = str(metarreply.readAll(), 'utf-8')
 
@@ -1504,7 +1477,6 @@ def wxfinished_metar():
 
 
 def getallwx():
-    global hasMetar
     if hasMetar:
         try:
             getwx_metar()
@@ -1533,8 +1505,6 @@ def getallwx():
 
 def getwx_owm():
     global wxreply, wxreplyc, wxreplyf
-    global hasMetar
-    global owmonecall
     # try OWM One Call once, if it fails, then we go to two calls (current weather and forecast)
     if owmonecall:
         wxurl = 'https://api.openweathermap.org/data/3.0/onecall?appid=' + \
@@ -1581,7 +1551,6 @@ def getwx_tm():
     global wxreply
     global wxreply2
     global wxreply3
-    global hasMetar
 
     if not hasMetar:
         # current conditions
@@ -1633,10 +1602,6 @@ def getwx_metar():
 
 def qtstart():
     global ctimer, wxtimer, temptimer
-    global objradar1
-    global objradar2
-    global objradar3
-    global objradar4
     global sun, daytime, sunrise, sunset
     global tzlatlng
 
@@ -1747,7 +1712,7 @@ class SlideShow(QtWidgets.QLabel):
         qimage = QtGui.QImage(image)
         if qimage.isNull():
             return
-        
+
         # Convert to pixmap and scale in one operation
         pixmap = QtGui.QPixmap.fromImage(qimage).scaled(
             self.size(),
@@ -2018,7 +1983,7 @@ class Radar(QtWidgets.QLabel):
         self.tileQimages.clear()
         ii2 = QPixmap(ii.copy(-xo, -yo, self.rect.width(), self.rect.height()))
         # finish weather radar image
-        
+
         # create timestamp layer - reuse cropped area from ii to reduce memory
         ii3 = ii.copy(-xo, -yo, self.rect.width(), self.rect.height())
         # Explicitly delete the large image to free memory immediately
@@ -2202,13 +2167,11 @@ class Radar(QtWidgets.QLabel):
         self.overlay.setPixmap(overlaypixmap)
 
     def getbase(self):
-        global manager
         basereq = QNetworkRequest(QUrl(self.baseurl))
         self.basereply = manager.get(basereq)
         self.basereply.finished.connect(self.basefinished)
 
     def getoverlay(self):
-        global manager
         overlayreq = QNetworkRequest(QUrl(self.overlayurl))
         self.overlayreply = manager.get(overlayreq)
         self.overlayreply.finished.connect(self.overlayfinished)
@@ -2249,8 +2212,6 @@ def realquit():
 
 
 def myquit(signum, frame):
-    global objradar1, objradar2, objradar3, objradar4
-    global ctimer, wxtimer, temptimer
 
     objradar1.stop()
     objradar2.stop()
@@ -2277,7 +2238,7 @@ def fixupframe(frame, onoff):
 
 
 def nextframe(plusminus):
-    global frames, framep
+    global framep
     frames[framep].setVisible(False)
     fixupframe(frames[framep], onoff=False)
     framep += plusminus
@@ -2673,7 +2634,7 @@ ypos += 130
 wxdesc = QtWidgets.QLabel(foreGround)
 wxdesc.setObjectName('wxdesc')
 wxdesc.setStyleSheet('#wxdesc { background-color: transparent; color: ' +
-                     Config.textcolorWeather + # Строка состояние погоды слева вверху
+                     Config.textcolorWeather +  # Строка состояние погоды слева вверху
                      '; font-size: ' +
                      str(int(30 * xscale)) +
                      'px; ' +
@@ -2685,7 +2646,7 @@ wxdesc.setGeometry(int(3 * xscale), int(ypos * yscale), int(600 * xscale), 800)
 wxdesc2 = QtWidgets.QLabel(frame2)
 wxdesc2.setObjectName('wxdesc2')
 wxdesc2.setStyleSheet('#wxdesc2 { background-color: transparent; color: ' +
-                      Config.textcolorWeather2 + # Строка состояние погоды на второй странице
+                      Config.textcolorWeather2 +  # Строка состояние погоды на второй странице
                       '; font-size: ' +
                       str(int(50 * xscale * Config.fontmult)) +
                       'px; ' +
@@ -2698,7 +2659,7 @@ ypos += 25
 temper = QtWidgets.QLabel(foreGround)
 temper.setObjectName('temper')
 temper.setStyleSheet('#temper { background-color: transparent; color: ' +
-                     Config.textcolorTemper + # Цвет Температура вверху слева
+                     Config.textcolorTemper +  # Цвет Температура вверху слева
                      '; font-size: ' +
                      str(int(70 * xscale * Config.fontmult)) +
                      'px; ' +
@@ -2710,7 +2671,7 @@ temper.setGeometry(int(3 * xscale), int(ypos * yscale), int(300 * xscale), int(1
 temper2 = QtWidgets.QLabel(frame2)
 temper2.setObjectName('temper2')
 temper2.setStyleSheet('#temper2 { background-color: transparent; color: ' +
-                      Config.textcolorTemper2 + # Цвет Температура на второй странице
+                      Config.textcolorTemper2 +  # Цвет Температура на второй странице
                       '; font-size: ' +
                       str(int(70 * xscale * Config.fontmult)) +
                       'px; ' +
@@ -2723,7 +2684,7 @@ ypos += 80
 press = QtWidgets.QLabel(foreGround)
 press.setObjectName('press')
 press.setStyleSheet('#press { background-color: transparent; color: ' +
-                    Config.textcolorPress + # Строка Давление слева
+                    Config.textcolorPress +  # Строка Давление слева
                     '; font-size: ' +
                     str(int(26 * xscale * Config.fontmult)) +
                     'px; ' +
@@ -2736,7 +2697,7 @@ ypos += 30
 humidity = QtWidgets.QLabel(foreGround)
 humidity.setObjectName('humidity')
 humidity.setStyleSheet('#humidity { background-color: transparent; color: ' +
-                       Config.textcolorHumidity +  #                          Цвет строка Влажность
+                       Config.textcolorHumidity +  # Цвет строка Влажность
                        '; font-size: ' +
                        str(int(25 * xscale * Config.fontmult)) +
                        'px; ' +
@@ -2762,7 +2723,7 @@ ypos += 20
 feelslike = QtWidgets.QLabel(foreGround)
 feelslike.setObjectName('feelslike')
 feelslike.setStyleSheet('#feelslike { background-color: transparent; color: ' +
-                        Config.textcolorFeelslike + #                            Цвет по Ощущению
+                        Config.textcolorFeelslike +  # Цвет по Ощущению
                         '; font-size: ' +
                         str(int(21 * xscale * Config.fontmult)) +
                         'px; ' +
@@ -2799,7 +2760,7 @@ bottom.setGeometry(0, int(height - 30 * yscale), width, int(50 * yscale))
 temp = QtWidgets.QLabel(foreGround)
 temp.setObjectName('temp')
 temp.setStyleSheet('#temp { font-family:sans-serif; color: ' +
-                   Config.textcolorTempInDoor + # Цвет Температура В помещении
+                   Config.textcolorTempInDoor +  # Цвет Температура В помещении
                    '; background-color: transparent; font-size: ' +
                    str(int(30 * xscale * Config.fontmult)) +
                    'px; ' +
@@ -2813,13 +2774,12 @@ ypos += 450
 fields = QtWidgets.QLabel(foreGround)
 fields.setObjectName("fields")
 fields.setStyleSheet("#fields { background-color: transparent; color: " +
-                    Config.colorfields +
-                    "; font-size: " +
-                    str(int(29 * xscale * Config.fontmult)) +
-                    "px; " +
-                    Config.fontattr +
-                    "}")
-fields.setAlignment(Qt.AlignHCenter | Qt.AlignTop)
+                      Config.colorfields +
+                      "; font-size: " +
+                      str(int(29 * xscale * Config.fontmult)) +
+                      "px; " +
+                      Config.fontattr +
+                      "}")
 fields.setGeometry(0, int(height - 150 * yscale), width, int(50 * yscale))
 fields.raise_()
 
@@ -2852,7 +2812,7 @@ for i in range(0, 9):
     wx.setObjectName('wx')
 
     day = QtWidgets.QLabel(lab)
-    day.setStyleSheet(Config.textcolorDayWeek) # Цвет Дней недели справа 1-9
+    day.setStyleSheet(Config.textcolorDayWeek)  # Цвет Дней недели справа 1-9
     day.setGeometry(int(10 * xscale), int(75 * yscale), int(300 * xscale), int(25 * yscale))
     day.setAlignment(Qt.AlignLeft | Qt.AlignBottom)
     day.setObjectName('day')

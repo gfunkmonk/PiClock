@@ -34,7 +34,6 @@ class MyHandler(BaseHTTPRequestHandler):
         self.end_headers()
 
     def do_GET(self):
-        global temps, lock
         self.send_response(200)
         self.send_header('Content-type', 'text/json')
         self.send_header('Access-Control-Allow-Origin', '*')
@@ -66,7 +65,6 @@ def t_http():
 
 
 def t_udp():
-    global temps, lock
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     server_address = ('', 53535)
     sock.bind(server_address)
