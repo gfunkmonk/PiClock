@@ -30,6 +30,9 @@ slide_time = 305  # in seconds, 3600 per hour
 slides = 'images/slideshow'  # the path to your local images
 slide_bg_color = '#000'  # https://htmlcolorcodes.com/  black #000
 
+# Startup screen selection: 1 for screen 1 (clock), 2 for screen 2 (dual radar)
+startup_screen = 1
+
 digital = 0  # 1 = Digital Clock, 0 = Analog Clock
 
 # Goes with light blue config (like the default one)
@@ -171,12 +174,14 @@ Ltm_code_map = {
 # radar_location,
 # -TO-
 # LatLng(44.9764016,-93.2486732),
+
+# screen 1, top radar
 radar1 = {
     'center': radar_location,  # the center of your radar block
-    'zoom': 7,  # this is a maps zoom factor, bigger = smaller area
+    'zoom': 7,  # this is a maps zoom factor, bigger number = smaller area, max is 7
     'basemap': map_base,  # Mapbox style for standard map or custom map with land and water only
     'overlay': map_overlay,  # Mapbox style for labels, roads, and borders only
-    'color': 6,  # rainviewer radar color scheme:
+    'color': 2,  # rainviewer radar color scheme:
     # https://www.rainviewer.com/api/color-schemes.html
     'smooth': 1,  # rainviewer radar smoothing
     'snow': 1,  # rainviewer radar show snow as different color
@@ -191,12 +196,13 @@ radar1 = {
     )
 }
 
+# screen 1, bottom radar
 radar2 = {
     'center': radar_location,
-    'zoom': 11,
+    'zoom': 5,
     'basemap': map_base,
     'overlay': map_overlay,
-    'color': 6,
+    'color': 2,
     'smooth': 1,
     'snow': 1,
     'markers': (
@@ -210,12 +216,13 @@ radar2 = {
     )
 }
 
+# screen 2, left radar
 radar3 = {
     'center': radar_location,
     'zoom': 7,
     'basemap': map_base,
     'overlay': map_overlay,
-    'color': 6,
+    'color': 2,
     'smooth': 1,
     'snow': 1,
     'markers': (
@@ -229,12 +236,13 @@ radar3 = {
     )
 }
 
+# screen 2, right radar
 radar4 = {
     'center': radar_location,
-    'zoom': 11,
+    'zoom': 4,
     'basemap': map_base,
     'overlay': map_overlay,
-    'color': 6,
+    'color': 2,
     'smooth': 1,
     'snow': 1,
     'markers': (
